@@ -36,6 +36,7 @@ class ViewController: UIViewController, UITableViewDelegate {
         view.addSubview(activityIndicator)
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.hidesWhenStopped = true
+        activityIndicator.color = .black
         
         NSLayoutConstraint.activate([
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -125,21 +126,17 @@ class ViewController: UIViewController, UITableViewDelegate {
                 }
                 
             } catch DecodingError.keyNotFound(let key, let context) {
-                print("❌ Missing key: '\(key.stringValue)'")
-                print("Context: \(context.debugDescription)")
                 await MainActor.run {
                     self.activityIndicator.stopAnimating()
                 }
                 
             } catch DecodingError.typeMismatch(let type, let context) {
-                print("❌ Type mismatch for type: \(type)")
                 print("Context: \(context.debugDescription)")
                 await MainActor.run {
                     self.activityIndicator.stopAnimating()
                 }
                 
             } catch {
-                print("❌ Error: \(error)")
                 await MainActor.run {
                     self.activityIndicator.stopAnimating()
                 }
@@ -165,23 +162,16 @@ class ViewController: UIViewController, UITableViewDelegate {
     
     // MARK: - UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print("🔵 Cell tapped at row \(indexPath.row)")
+      
         tableView.deselectRow(at: indexPath, animated: true)
         
         guard let userID = dataSource.itemIdentifier(for: indexPath) else {
-            print("❌ No userID found")
-            return
-        }
-        print("🔵 UserID: \(userID)")
+            return }
         
-        guard let selectedUser = users.first(where: { $0.id == userID }) else {
-            print("❌ No user found with ID \(userID)")
-            return
-        }
-        print("🔵 Selected user: \(selectedUser.fullName)")
+        guard let selectedUser = users.first(where: { $0.id == userID }) else { return }
+
         
         let detailVC = UserDetailViewController(user: selectedUser)
-        print("🔵 DetailVC created, pushing...")
         navigationController?.pushViewController(detailVC, animated: true)
     }
 }
