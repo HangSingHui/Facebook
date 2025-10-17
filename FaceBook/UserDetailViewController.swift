@@ -7,8 +7,8 @@
 
 import UIKit
 
-class UserDetailViewController: UITableViewController {
-    
+class UserDetailViewController: UITableViewController{
+
     var user: SimplifiedUser!
     
     init(user: SimplifiedUser){
@@ -97,9 +97,9 @@ class UserDetailViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String?{
         
         switch section{
-        case 0: return "PHOTO"
-        case 1: return "NAME"
-        case 2: return "LOCATION"
+        case 0: return "📷 PHOTO"
+        case 1: return "⭐️ NAME"
+        case 2: return "📍LOCATION"
         default: return nil
         }
     }

@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ViewController: UIViewController, UITableViewDelegate {
+class ViewController: UIViewController, UITableViewDelegate, UISearchBarDelegate, UISearchResultsUpdating {
     
     let userURL = "https://dummyjson.com/users?limit=10"
     let pictureURL = "https://ozgrozer.github.io/100k-faces/0/3/"
@@ -15,6 +15,15 @@ class ViewController: UIViewController, UITableViewDelegate {
     let table = UITableView()
     var users = [SimplifiedUser]()
     let activityIndicator = UIActivityIndicatorView(style: .large)
+    
+    //Add search controller
+    private let searchController = UISearchController(searchResultsController: nil)
+    private var filteredUsers: [SimplifiedUser] = []
+    private var isSearching: Bool{
+        let hasText = !(searchController.searchBar.text?.isEmpty ??  true)
+        let hasScope = searchController.searchBar.selectedScopeButtonIndex != 0
+        return searchController.isActive && (hasText || hasScope)
+    }
     
     // Diffable data source
     private var dataSource: UITableViewDiffableDataSource<Int, Int>!
@@ -26,8 +35,16 @@ class ViewController: UIViewController, UITableViewDelegate {
         navigationItem.largeTitleDisplayMode = .always
         view.backgroundColor = .white
         
-        setupActivityIndicator()
+        //configure search
+        searchController.searchResultsUpdater = self
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search for Someone"
+        navigationItem.searchController = searchController
+        definesPresentationContext = true
+      
+       
         setupTableView()
+        setupActivityIndicator()
         setupDataSource()
         fetchUsers()
     }
@@ -58,6 +75,14 @@ class ViewController: UIViewController, UITableViewDelegate {
         ])
     }
     
+    func updateSearchResults(for searchController: UISearchController) {
+        filterContent()
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int){
+        filterContent()
+    }
+    
     private func setupDataSource() {
         dataSource = UITableViewDiffableDataSource<Int, Int>(
             tableView: table
@@ -78,10 +103,29 @@ class ViewController: UIViewController, UITableViewDelegate {
     private func updateSnapshot() {
         var snapshot = NSDiffableDataSourceSnapshot<Int, Int>()
         snapshot.appendSections([0])  // Single section
-        let userIDs = users.map { $0.id }
+        let currentUsers = isSearching ? filteredUsers : users
+        let userIDs = currentUsers.map { $0.id }
+        
         snapshot.appendItems(userIDs, toSection: 0)
         dataSource.apply(snapshot, animatingDifferences: true)
     }
+    
+    
+    
+    private func filterContent(){
+        var filtered = users
+        
+        //Narrow by search text
+        if let searchText = searchController.searchBar.text?.lowercased(),
+            !searchText.isEmpty {
+                filtered = filtered.filter { $0.fullName.lowercased().contains(searchText)
+            }
+        }
+        
+        filteredUsers = filtered
+        updateSnapshot()
+    }
+    
     
     func fetchUsers() {
         activityIndicator.startAnimating()
@@ -125,12 +169,12 @@ class ViewController: UIViewController, UITableViewDelegate {
                     print("- \(user.fullName) from \(user.city), \(user.state)")
                 }
                 
-            } catch DecodingError.keyNotFound(let key, let context) {
+            } catch DecodingError.keyNotFound(_, _) {
                 await MainActor.run {
                     self.activityIndicator.stopAnimating()
                 }
                 
-            } catch DecodingError.typeMismatch(let type, let context) {
+            } catch DecodingError.typeMismatch(_, let context) {
                 print("Context: \(context.debugDescription)")
                 await MainActor.run {
                     self.activityIndicator.stopAnimating()
@@ -160,7 +204,6 @@ class ViewController: UIViewController, UITableViewDelegate {
         }
     }
     
-    // MARK: - UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
       
         tableView.deselectRow(at: indexPath, animated: true)

@@ -85,6 +85,7 @@ class UserTableViewCell: UITableViewCell{
     
     func configure(with user: SimplifiedUser){
         userName.text = user.fullName
+        userName.font = .boldSystemFont(ofSize: 20)
         userAddress.text = "\(user.city), \(user.state)"
         if let urlString = user.profileImage, let url = URL(string: urlString) {
             loadImage(from: url)
